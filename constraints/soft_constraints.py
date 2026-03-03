@@ -1,14 +1,14 @@
 """
-Soft Constraint Evaluation Module
+Soft Constraint Evaluation Module (v2)
 
-Implements the two soft constraints from the scoped problem:
-    S1a — Minimize Student Gaps (idle periods between events in a day)
+Implements three soft constraints:
+    S1a — Minimize Student Gaps
+    S4  — Promote Event Spreading (penalize overloaded days)
     S5  — Lecturer Time Preferences
-
-These operate on a COMPLETE, DECODED timetable and return penalty values.
 """
 
 from collections import defaultdict
+import math
 
 
 def calculate_student_gap_penalty(timetable, timeslots_dict, events_dict):
@@ -17,17 +17,11 @@ def calculate_student_gap_penalty(timetable, timeslots_dict, events_dict):
     
     For each student group, for each day:
         1. Find all periods where they have events.
-        2. Count the idle (empty) periods between the first and last event.
-    
-    Args:
-        timetable: dict mapping event_id -> (timeslot_id, room_id).
-        timeslots_dict: dict mapping timeslot_id -> Timeslot object.
-        events_dict: dict mapping event_id -> Event object.
+        2. Count the idle (empty) periods between first and last event.
     
     Returns:
         int: Total gap count across all student groups and all days.
     """
-    # Build: student_group_id -> day -> sorted list of periods
     group_day_periods = defaultdict(lambda: defaultdict(list))
     
     for event_id, (timeslot_id, room_id) in timetable.items():
@@ -42,36 +36,65 @@ def calculate_student_gap_penalty(timetable, timeslots_dict, events_dict):
     for group_id, days in group_day_periods.items():
         for day, periods in days.items():
             if len(periods) <= 1:
-                continue  # No gap possible with 0 or 1 event
+                continue
             
             sorted_periods = sorted(periods)
-            first = sorted_periods[0]
-            last = sorted_periods[-1]
-            
-            # Total slots in the span minus actual events = gaps
-            span = last - first + 1
-            events_in_span = len(sorted_periods)
-            gaps = span - events_in_span
-            
+            span = sorted_periods[-1] - sorted_periods[0] + 1
+            gaps = span - len(sorted_periods)
             total_gaps += gaps
     
     return total_gaps
+
+
+def calculate_spreading_penalty(timetable, timeslots_dict, events_dict):
+    """
+    S4: Penalize uneven distribution of events across days for each 
+    student group.
+    
+    For each student group:
+        Count events per day. Penalize any day that has more than
+        a "fair share" (total_events / num_active_days, rounded up).
+    
+    This discourages cramming all events into 1-2 days.
+    
+    Returns:
+        int: Total spreading penalty.
+    """
+    group_day_counts = defaultdict(lambda: defaultdict(int))
+    
+    for event_id, (timeslot_id, room_id) in timetable.items():
+        event = events_dict[event_id]
+        timeslot = timeslots_dict[timeslot_id]
+        
+        for group_id in event.student_group_ids:
+            group_day_counts[group_id][timeslot.day] += 1
+    
+    total_penalty = 0
+    
+    for group_id, day_counts in group_day_counts.items():
+        if not day_counts:
+            continue
+        
+        total_events = sum(day_counts.values())
+        
+        # Dynamic number of days in the week
+        all_days = set(ts.day for ts in timeslots_dict.values())
+        num_days = len(all_days)
+        
+        ideal_per_day = math.ceil(total_events / num_days)
+        
+        for day, count in day_counts.items():
+            if count > ideal_per_day:
+                excess = count - ideal_per_day
+                total_penalty += excess
+    
+    return total_penalty
 
 
 def calculate_lecturer_preference_penalty(timetable, timeslots_dict,
                                            events_dict, lecturers_dict):
     """
     S5: Penalize events scheduled outside lecturer's preferred timeslots.
-    
-    For each event in the timetable:
-        If the lecturer has specified preferred timeslots,
-        and the assigned timeslot is NOT in that set, add 1 penalty.
-    
-    Args:
-        timetable: dict mapping event_id -> (timeslot_id, room_id).
-        timeslots_dict: dict mapping timeslot_id -> Timeslot object.
-        events_dict: dict mapping event_id -> Event object.
-        lecturers_dict: dict mapping lecturer_id -> Lecturer object.
     
     Returns:
         int: Total count of lecturer preference violations.

@@ -2,14 +2,21 @@ class Lecturer:
     """
     Represents a faculty member / instructor.
     
+    Timeslot Reference (6 days x 3 periods = 18 slots):
+        Saturday:  0,  1,  2
+        Sunday:    3,  4,  5
+        Monday:    6,  7,  8
+        Tuesday:   9, 10, 11
+        Wednesday: 12, 13, 14
+        Thursday:  15, 16, 17
+    
     Attributes:
         id (int): Unique identifier.
         name (str): Human-readable name.
-        unavailable_timeslots (set[int]): Set of timeslot IDs where the lecturer
-                                          CANNOT be scheduled (hard constraint H6).
-        preferred_timeslots (set[int]): Set of timeslot IDs the lecturer PREFERS
-                                        (soft constraint S5). Scheduling outside
-                                        these incurs a penalty.
+        unavailable_timeslots (set[int]): Timeslot IDs where lecturer
+                                          CANNOT teach (hard constraint H6).
+        preferred_timeslots (set[int]): Timeslot IDs the lecturer PREFERS.
+                                        Scheduling outside these = penalty (S5).
     """
     
     def __init__(self, id: int, name: str = None,
@@ -26,7 +33,6 @@ class Lecturer:
     
     def prefers(self, timeslot_id: int) -> bool:
         """Check if timeslot is among lecturer's preferred times (S5)."""
-        # If no preferences specified, every slot is acceptable
         if not self.preferred_timeslots:
             return True
         return timeslot_id in self.preferred_timeslots
