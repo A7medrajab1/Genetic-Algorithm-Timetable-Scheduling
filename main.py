@@ -596,6 +596,10 @@ def main():
     print(f"  Spreading Penalty (x{evaluator.gamma}):       "
           f"{best['spreading_penalty']:.1f}")
     print(f"  {'─'*50}")
+    print(f"  Single-Event Days (raw):      {best['single_days_raw']}")
+    print(f"  Single-Event Day Penalty (x{evaluator.delta}): "
+          f"{best['single_day_penalty']:.1f}")
+    print(f"  {'─'*50}")
     print(f"  Lecturer Pref Violations (raw):   "
           f"{best['lecturer_violations_raw']}")
     print(f"  Lecturer Pref Penalty (x{evaluator.beta}):    "

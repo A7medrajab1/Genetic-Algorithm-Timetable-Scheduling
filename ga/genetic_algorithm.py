@@ -103,11 +103,11 @@ class GeneticAlgorithm:
         
         # Header
         print(f"  {'Gen':>4s} | {'Best':>8s} | {'Avg':>8s} | "
-              f"{'Unpl':>4s} | {'Gaps':>4s} | {'Sprd':>4s} | "
-              f"{'LPrf':>4s} | {'MutRate':>7s}")
+              f"{'Unpl':>4s} | {'Gaps':>4s} | {'SglD':>4s} | "
+              f"{'Sprd':>4s} | {'LPrf':>4s} | {'MutR':>5s}")
         print(f"  {'-'*4}-+-{'-'*8}-+-{'-'*8}-+-"
               f"{'-'*4}-+-{'-'*4}-+-{'-'*4}-+-"
-              f"{'-'*4}-+-{'-'*7}")
+              f"{'-'*4}-+-{'-'*4}-+-{'-'*5}")
         
         # Initialize population
         population = initialize_population(
@@ -150,9 +150,10 @@ class GeneticAlgorithm:
                     f"{avg_fitness:>8.1f} | "
                     f"{gen_best['unplaced_count']:>4d} | "
                     f"{gen_best['student_gaps_raw']:>4d} | "
+                    f"{gen_best['single_days_raw']:>4d} | "
                     f"{gen_best['spreading_raw']:>4d} | "
                     f"{gen_best['lecturer_violations_raw']:>4d} | "
-                    f"{swap_r:>5.2f}x"
+                    f"{swap_r:>5.2f}"
                 )
             
             # PARTIAL RESTART: If stuck for 120+ generations,
